@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Env
+.venv/
+venv/
+
+# Environment Variables
+.env
+*.env
+
+# Databases
+*.db
+
+# ChromaDB
+chroma_data/
+
+# Uploads
+uploads/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+
+  # Ollama LLM server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ra_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - ra_net
+    restart: unless-stopped
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: ra_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - CHROMA_PERSIST_DIR=/app/chroma_data
+      - LLM_API_BASE=http://ollama:11434
+      - UPLOAD_DIR=/app/uploads
+      - METADATA_DB=/app/metadata.db
+      - ALLOWED_ORIGINS=["http://localhost:8501"]
+      - DEBUG=false
+    volumes:
+      - chroma_data:/app/chroma_data
+      - uploads_data:/app/uploads
+    depends_on:
+      - ollama
+    networks:
+      - ra_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Streamlit Frontend
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: ra_frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE=http://backend:8000/api/v1
+    depends_on:
+      - backend
+    networks:
+      - ra_net
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  chroma_data:
+  uploads_data:
+
+networks:
+  ra_net:
+    driver: bridge
